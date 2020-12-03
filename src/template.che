@@ -1,0 +1,16 @@
+use import std.string
+io :: import std.io
+fmt :: import std.fmt
+
+Main :: () {
+    part_1()
+    part_2()
+}
+
+part_1 :: () {
+
+}
+
+part_2 :: () {
+
+}
