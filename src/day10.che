@@ -1,0 +1,202 @@
+use import std.string
+use import std.array
+io :: import std.io
+fmt :: import std.fmt
+
+Main :: () {
+    part_1()
+    part_2()
+}
+
+part_1 :: () {
+    mut ones := 0
+    mut threes := 0
+
+    mut joltages := Array[int].from_slice(input)
+    joltages.sort((a, b) => *b - *a)
+    joltages.add(*joltages.peek_last() + 3)
+
+    mut last_joltage := 0
+    for j in joltages[..] {
+        diff := j - last_joltage
+        if diff == 1 {
+            ones += 1
+        } else if diff == 3 {
+            threes += 1
+        }
+        last_joltage = j
+    }
+
+    io.formatln("Part 1: {} * {} = {}", [ones, threes, ones * threes])
+}
+
+part_2 :: () {
+    mut joltages := Array[int].from_slice(input)
+    joltages.add(0)
+    joltages.sort((a, b) => *b - *a)
+    joltages.add(*joltages.peek_last() + 3)
+
+    mut possibilities := Array[int].new()
+    possibilities.resize(joltages.count())
+    *possibilities[0] = 1
+
+    for j, j_index in joltages[1..] {
+        mut p := 0
+        for i in 0..3 {
+            if j_index - i < 0 then break
+            k := *joltages[j_index - i]
+            if j - k <= 3 {
+                p += *possibilities[j_index - i]
+            }
+        }
+        *possibilities[j_index + 1] = p
+    }
+    
+    io.formatln("Part 2: {}", [possibilities.peek_last()])
+}
+
+input := puzzle_input[..]
+
+test_input := [
+    16
+    10
+    15
+    5
+    1
+    11
+    7
+    19
+    6
+    12
+    4
+]
+
+test_input2 := [
+    28
+    33
+    18
+    42
+    31
+    14
+    46
+    20
+    48
+    47
+    24
+    23
+    49
+    45
+    19
+    38
+    39
+    11
+    1
+    32
+    25
+    35
+    8
+    17
+    7
+    9
+    4
+    2
+    34
+    10
+    3
+]
+
+puzzle_input := [
+    97
+    62
+    23
+    32
+    51
+    19
+    98
+    26
+    90
+    134
+    73
+    151
+    116
+    76
+    6
+    94
+    113
+    127
+    119
+    44
+    115
+    50
+    143
+    150
+    86
+    91
+    36
+    104
+    131
+    101
+    38
+    66
+    46
+    96
+    54
+    70
+    8
+    30
+    1
+    108
+    69
+    139
+    24
+    29
+    77
+    124
+    107
+    14
+    137
+    16
+    140
+    80
+    68
+    25
+    31
+    59
+    45
+    126
+    148
+    67
+    13
+    125
+    53
+    57
+    41
+    47
+    35
+    145
+    120
+    12
+    37
+    5
+    110
+    138
+    130
+    2
+    63
+    83
+    22
+    79
+    52
+    7
+    95
+    58
+    149
+    123
+    89
+    109
+    15
+    144
+    114
+    9
+    78
+]
