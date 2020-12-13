@@ -1,0 +1,71 @@
+use import std.string
+use import std.array
+io :: import std.io
+fmt :: import std.fmt
+
+Main :: () {
+    part_1()
+    part_2()
+}
+
+part_1 :: () {
+    mut bus_id := -1
+    mut wait_time := int.max
+
+    earliest_departure := input[0]
+    for id_str in input[1].split_at_char(',') {
+        if id_str == "x" then continue
+        id := fmt.parse_int(id_str)
+
+        time := earliest_departure % id
+        if id - time < wait_time {
+            wait_time = id - time
+            bus_id = id
+        }
+    }
+
+    io.formatln("Part 1: {}x{} = {}", [bus_id, wait_time, bus_id * wait_time])
+}
+
+part_2 :: () {
+    mut t := 0
+    mut max_id := 0
+    mut offset := 0
+
+    mut ids := Array[(id: int, offset: int)].new()
+
+    for id_str in input[1].split_at_char(',') {
+        if id_str == "x" then continue
+        id := fmt.parse_int(id_str)
+
+        ids.add((id, it_index))
+
+        if id > max_id {
+            max_id = id
+            offset = it_index
+        }
+    }
+
+    t = max_id - offset
+    loop {
+        mut done := true
+
+        for &bus in ids[..] {
+            if (t + bus.offset) % bus.id != 0 {
+                done = false
+                break
+            }
+        }
+
+        if done then break
+        t += max_id
+    }
+
+    io.formatln("Part 2: {}", [t])
+}
+
+input := puzzle_input
+
+test_input := (939, "7,13,x,x,59,x,31,19")
+
+puzzle_input := (1000067, "17,x,x,x,x,x,x,x,x,x,x,37,x,x,x,x,x,439,x,29,x,x,x,x,x,x,x,x,x,x,13,x,x,x,x,x,x,x,x,x,23,x,x,x,x,x,x,x,787,x,x,x,x,x,x,x,x,x,41,x,x,x,x,x,x,x,x,19")
