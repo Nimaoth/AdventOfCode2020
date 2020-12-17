@@ -1,0 +1,170 @@
+use import std.string
+use import std.array
+io :: import std.io
+fmt :: import std.fmt
+
+Main :: () {
+    part_1()
+    part_2()
+}
+
+part_1 :: () {
+    size :: 50
+    mut grid1 := Array[bool].new()
+    mut grid2 := Array[bool].new()
+    grid1.resize(size*size*size)
+    grid2.resize(size*size*size)
+    
+    mut current := grid1.slice_mut()
+    mut next := grid2.slice_mut()
+
+    for it in (0, 0, 0)..(input[0].bytes.length, input.length, 1) {
+        ch := char(*input[it.y][it.x])
+        *current[it.x + it.y * size] = (ch == '#')
+    }
+
+    for 0..6 {
+        io.formatln("iteration {}", [it_index])
+
+        for it in (0, 0, 0)..(size, size, size) {
+            x, y, z := it
+            mut active_neighbors := 0
+
+            for d in (-1, -1, -1)..(2, 2, 2) {
+                dx, dy, dz := d
+                if dx == 0 and dy == 0 and dz == 0 then continue
+                if *current[index(x + dx, y + dy, z + dz, size)] {
+                    active_neighbors += 1
+                }
+            }
+            
+            i := index(x, y, z, size)
+            if *current[i] and (active_neighbors < 2 or active_neighbors > 3) {
+                *next[i] = false
+            } else if !*current[i] and active_neighbors == 3 {
+                *next[i] = true
+            } else {
+                *next[i] = *current[i]
+            }
+        }
+
+        current, next = next, current
+    }
+
+    mut result := 0
+    for b in current {
+        result += if b then 1 else 0
+    }
+
+    io.formatln("Part 1: {}", [result])
+}
+
+part_2 :: () {
+    size :: 30
+    mut grid1 := Array[bool].new()
+    mut grid2 := Array[bool].new()
+    grid1.resize(size*size*size*size)
+    grid2.resize(size*size*size*size)
+    
+    mut current := grid1.slice_mut()
+    mut next := grid2.slice_mut()
+
+    for it in (0, 0, 0, 0)..(input[0].bytes.length, input.length, 1, 1) {
+        ch := char(*input[it.y][it.x])
+        *current[it.x + it.y * size] = (ch == '#')
+    }
+
+    for 0..6 {
+        io.formatln("iteration {}", [it_index])
+
+        for it in (0, 0, 0, 0)..(size, size, size, size) {
+            x, y, z, w := it
+            mut active_neighbors := 0
+
+            for d in (-1, -1, -1, -1)..(2, 2, 2, 2) {
+                dx, dy, dz, dw := d
+                if dx == 0 and dy == 0 and dz == 0 and dw == 0 then continue
+                if *current[index_4d(x + dx, y + dy, z + dz, w + dw, size)] {
+                    active_neighbors += 1
+                }
+            }
+            
+            i := index_4d(x, y, z, w, size)
+            if *current[i] and (active_neighbors < 2 or active_neighbors > 3) {
+                *next[i] = false
+            } else if !*current[i] and active_neighbors == 3 {
+                *next[i] = true
+            } else {
+                *next[i] = *current[i]
+            }
+        }
+
+        current, next = next, current
+    }
+
+    mut result := 0
+    for b in current {
+        result += if b then 1 else 0
+    }
+
+    io.formatln("Part 2: {}", [result])
+}
+
+mod_abs :: (x: int, m: int) -> int {
+    return ((x % m) + m) % m
+}
+
+index :: (x: int, y: int, z: int, size: int) -> int {
+    return mod_abs(x, size) + mod_abs(y, size) * size + mod_abs(z, size) * size * size
+}
+
+index_4d :: (x: int, y: int, z: int, w: int, size: int) -> int {
+    return mod_abs(x, size) + mod_abs(y, size) * size + mod_abs(z, size) * size * size + mod_abs(w, size) * size * size * size
+}
+
+for_extension_range_coordinates_3d :: (r: Range[(int, int, int)], code: Code) #for {
+    mut it_index := 0
+    for z, _ in r.start[2]..r.end[2] #label outer_loop {
+        for y, _ in r.start[1]..r.end[1] {
+            for x, _ in r.start[0]..r.end[0] {
+                it : (x: int, y: int, z: int) = (x, y, z)
+                defer it_index += 1
+                @insert(code, _break={break outer_loop}, _continue=continue)
+            }
+        }
+    }
+}
+
+for_extension_range_coordinates_4d :: (r: Range[(int, int, int, int)], code: Code) #for {
+    mut it_index := 0
+    for w, _ in r.start[3]..r.end[3] #label outer_loop {
+        for z, _ in r.start[2]..r.end[2] {
+            for y, _ in r.start[1]..r.end[1] {
+                for x, _ in r.start[0]..r.end[0] {
+                    it : (x: int, y: int, z: int, w: int) = (x, y, z, w)
+                    defer it_index += 1
+                    @insert(code, _break={break outer_loop}, _continue=continue)
+                }
+            }
+        }
+    }
+}
+
+input := puzzle_input[..]
+
+test_input := [
+    ".#."
+    "..#"
+    "###"
+]
+
+puzzle_input := [
+    ".##.####"
+    ".#.....#"
+    "#.###.##"
+    "#####.##"
+    "#...##.#"
+    "#######."
+    "##.#####"
+    ".##...#."
+]
