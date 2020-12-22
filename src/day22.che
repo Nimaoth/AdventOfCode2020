@@ -1,0 +1,224 @@
+use import std.string
+use import std.ring_queue
+use import std.array
+
+io :: import std.io
+fmt :: import std.fmt
+
+Main :: () {
+    part_1()
+    part_2()
+}
+
+part_1 :: () {
+    mut player1 := RingQueue[int].from_slice(input[0][..])
+    mut player2 := RingQueue[int].from_slice(input[1][..])
+
+    while player1.count() > 0 and player2.count() > 0 {
+        p1 := player1.pop()
+        p2 := player2.pop()
+        if p1 > p2 {
+            player1.push(p1)
+            player1.push(p2)
+        } else {
+            player2.push(p2)
+            player2.push(p1)
+        }
+    }
+
+    winner := if player1.count() > 0 then &player1 else &player2
+
+    mut result := 0
+    for num in winner {
+        result += *num * (winner.count() - it_index)
+    }
+    io.formatln("Part 1: {}", [result])
+}
+
+part_2 :: () {
+    mut player1 := RingQueue[int].from_slice(input[0][..])
+    mut player2 := RingQueue[int].from_slice(input[1][..])
+
+    play :: (player1: RingQueue[int], player2: RingQueue[int], game: int = 1) -> bool, RingQueue[int] {
+        mut configs := Array[Configuration].new()
+
+        mut round := 1
+        while player1.count() > 0 and player2.count() > 0 {
+            // io.println("")
+            defer round += 1
+
+            config := Configuration(player1.clone(), player2.clone())
+
+            // io.formatln("-- Round {} (Game {}) --", [round, game])
+            // io.formatln("Player 1's deck: {}", [&player1])
+            // io.formatln("Player 2's deck: {}", [&player2])
+
+            for &c in configs[..] {
+                if config.equal(c) {
+                    // io.formatln("Found existing configuration: `n{}`n{}", [&config, c])
+                    // io.formatln("Player 1 wins the round {} of game {}!", [round, game])
+                    return true, player1.clone()
+                }
+            }
+
+
+            p1 := player1.pop()
+            p2 := player2.pop()
+
+            // io.formatln("Player 1 plays: {}", [p1])
+            // io.formatln("Player 2 plays: {}", [p2])
+
+            if player1.count() >= p1 and player2.count() >= p2 {
+                // recurse
+                mut player1_new := RingQueue[int].new()
+                mut player2_new := RingQueue[int].new()
+                for 0..p1 do player1_new.push(*player1[it])
+                for 0..p2 do player2_new.push(*player2[it])
+                p1_won, _ := play(player1_new, player2_new, game + 1)
+                if p1_won {
+                    player1.push(p1)
+                    player1.push(p2)
+                    // io.formatln("Player 1 wins the round {} of game {}!", [round, game])
+                } else {
+                    player2.push(p2)
+                    player2.push(p1)
+                    // io.formatln("Player 2 wins the round {} of game {}!", [round, game])
+                }
+            } else {
+                if p1 > p2 {
+                    player1.push(p1)
+                    player1.push(p2)
+                    // io.formatln("Player 1 wins the round {} of game {}!", [round, game])
+                } else {
+                    player2.push(p2)
+                    player2.push(p1)
+                    // io.formatln("Player 2 wins the round {} of game {}!", [round, game])
+                }
+            }
+
+            configs.add(config)
+        }
+
+        if player1.count() > player2.count() {
+            Memory.drop(player2)
+            return true, player1
+        } else {
+            Memory.drop(player1)
+            return false, player2
+        }
+    }
+
+    _, winner := play(player1.clone(), player2.clone())
+
+    mut result := 0
+    for num in &winner {
+        result += *num * (winner.count() - it_index)
+    }
+    io.formatln("Part 2: {}", [result])
+}
+
+impl Clone for int {
+    clone :: (&Self) -> int {
+        return *self
+    }
+}
+
+Configuration :: struct {
+    player1 : RingQueue[int]
+    player2 : RingQueue[int]
+}
+
+impl Equatable[Configuration] for Configuration {
+    equal :: (&Self, other: &Configuration) -> bool {
+        if self.player1.count() != other.player1.count() or self.player2.count() != other.player2.count() {
+            return false
+        }
+        for 0..self.player1.count() {
+            if *self.player1[it] != *other.player1[it] {
+                return false
+            }
+        }
+        for 0..self.player2.count() {
+            if *self.player2[it] != *other.player2[it] {
+                return false
+            }
+        }
+        return true
+    }
+}
+
+input := puzzle_input
+
+test_input2 := ([43, 19], [2, 29, 14])
+
+test_input := ([
+    9
+    2
+    6
+    3
+    1
+],
+
+[
+    5
+    8
+    4
+    7
+    10
+])
+
+puzzle_input := ([
+    15
+    31
+    26
+    4
+    36
+    30
+    43
+    39
+    50
+    21
+    25
+    46
+    6
+    44
+    12
+    20
+    23
+    9
+    48
+    11
+    16
+    42
+    17
+    13
+    10
+],
+
+[
+    34
+    49
+    19
+    24
+    45
+    28
+    7
+    41
+    18
+    38
+    2
+    3
+    33
+    14
+    35
+    40
+    32
+    47
+    22
+    29
+    8
+    37
+    5
+    1
+    27
+])
