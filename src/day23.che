@@ -1,0 +1,217 @@
+use import std.string
+use import std.array
+use import std.gap_buffer
+use import std.linked_list
+use import std.mem.arena_allocator
+use import std.printable
+
+io :: import std.io
+fmt :: import std.fmt
+
+DEBUG_LOG :: false
+
+Main :: () {
+    part_1()
+    part_2()
+}
+
+part_1 :: () {
+    mut numbers := LinkedList[int].new()
+    mut one := numbers.elements
+    mut min, max := int.max, int.min
+    for c in input {
+        num := int(c) - int('0')
+        if num < min then min <- num
+        if num > max then max <- num
+        entry := numbers.append(num)
+
+        if num == 1 {
+            one = entry
+        }
+    }
+    // io.formatln("{}", [&numbers])
+
+    mut buff := Array[int].new()
+
+    mut current : ^mut LinkedList[int].Entry = numbers.elements
+    for 0..100 {
+        current_num := current.value
+
+        if const DEBUG_LOG then io.formatln("-- move {} -- ", [it_index + 1])
+        if const DEBUG_LOG then io.formatln("cups: {}, {}", [current_num, &numbers])
+
+        buff.clear()
+        for 0..3 {
+            to_erase := numbers.get_next(current)
+            buff.add(numbers.erase(to_erase))
+            // io.formatln("{}", [&numbers])
+        }
+
+        if const DEBUG_LOG then io.formatln("pick up: {}", [buff[..]])
+        if const DEBUG_LOG then io.formatln("{}", [&numbers])
+
+        mut destination := current_num - 1
+        if destination < min {
+            destination = max
+        }
+
+        loop {
+            match buff.index_of_value(destination) {
+                Some($i) -> {
+                    destination -= 1
+                    if destination < min {
+                        destination = max
+                    }
+                }
+
+                None -> {
+                    break
+                }
+            }
+        }
+        if const DEBUG_LOG then io.formatln("destination: {}", [destination])
+        mut target := current
+        while target.value != destination {
+            target = numbers.get_next(target)
+        }
+        for num in buff[..] {
+            target = numbers.insert_after(target, num)
+            if num == 1 {
+                one = target
+            }
+        }
+        current = numbers.get_next(current)
+
+        if const DEBUG_LOG then io.println("")
+    }
+
+    mut start := numbers.get_next(one)
+    mut end := one
+    while start != end {
+        io.print(start.value)
+        start = numbers.get_next(start)
+    }
+    io.println("")
+    io.println("58427369")
+}
+
+Value :: struct #copy {
+    value : int
+    prev  : ^mut LinkedList[Value].Entry
+}
+impl Printable for Value {
+    print :: (&Self, str: &mut String, format: string) {
+        fmt.format_into(str, "{}", [self.value, self.prev.value.value])
+    }
+}
+impl Printable for LinkedList[Value].Entry {
+    print :: (&Self, str: &mut String, format: string) {
+        fmt.format_into(str, "{}", [self.value.value])
+    }
+}
+
+part_2 :: () {
+
+    allocator := ArenaAllocator.new(1024*1024)
+    mut numbers := LinkedList[Value].new(^allocator)
+    mut one := numbers.elements
+    mut min, max := int.max, int.min
+
+    entries_1_9 := Array[^mut LinkedList[Value].Entry].new()
+    entries_1_9.resize(9)
+    for c in input {
+        num := int(c) - int('0')
+        if num < min then min <- num
+        if num > max then max <- num
+        entry := numbers.append(Value(num, null))
+
+        *entries_1_9[num - 1] = entry
+
+        if num == 1 {
+            one = entry
+        }
+    }
+
+    // prev of x = x - 1
+    while mut c := numbers.elements, c != null, c = c.next {
+        if c.value.value > 1 {
+            c.value.prev = *entries_1_9[c.value.value - 1 - 1]
+        }
+    }
+
+    mut prev : ^mut LinkedList[Value].Entry = *entries_1_9[9 - 1]
+    for num in (max + 1)..=1_000_000 {
+        entry := numbers.append(Value(num, prev))
+        prev = entry
+        max = num
+    }
+
+    // prev of 1 = 1_000_000
+    entries_1_9[1 - 1].value.prev = numbers.elements.prev
+    // entries_1_9[1 - 1].value.prev = *entries_1_9[9 - 1]
+
+    // prev of x = x - 1
+    while mut c := numbers.elements.next, c != null, c = c.next {
+        @assert(c.value.prev != null)
+        // @assert(c.value.prev.value.value == c.value.value - 1)
+    }
+
+    mut buff := Array[^mut LinkedList[Value].Entry].new()
+
+    mut current : ^mut LinkedList[Value].Entry = numbers.elements
+    count := 10_000_000
+    for 0..count {
+        if it_index % 10_000 == 0 {
+            io.formatln("{}/{}", [it_index, count])
+        }
+        current_num := current
+
+        if const DEBUG_LOG then io.formatln("-- move {} -- ", [it_index + 1])
+        if const DEBUG_LOG then io.formatln("cups: {}, {}", [current_num.value.value, &numbers])
+
+        buff.clear()
+        for 0..3 {
+            to_erase := numbers.get_next(current)
+            numbers.erase_entry(to_erase)
+            buff.add(to_erase)
+            // io.formatln("{}", [&numbers])
+        }
+
+        if const DEBUG_LOG then io.formatln("pick up: {}", [buff[..]])
+        if const DEBUG_LOG then io.formatln("{}", [&numbers])
+
+        mut destination := current_num.value.prev
+
+        mut loop_count := 0
+        loop {
+            if const DEBUG_LOG then io.formatln("destination: {}?", [destination.value.value])
+            match buff.index_of(destination, (v, dest) => v.value.value == dest.value.value) {
+                Some($i) -> {
+                    destination = destination.value.prev
+                }
+
+                None -> {
+                    break
+                }
+            }
+        }
+        if const DEBUG_LOG then io.formatln("destination: {}", [destination.value.value])
+        for num in buff[..] {
+            numbers.insert_entry_after(destination, num)
+            destination = num
+        }
+        current = numbers.get_next(current)
+
+        if const DEBUG_LOG then io.println("")
+    }
+
+    mut a := numbers.get_next(one)
+    mut b := numbers.get_next(a)
+    io.formatln("Part 2: {} * {} = {}", [a.value.value, b.value.value, a.value.value * b.value.value])
+}
+
+input := puzzle_input
+
+test_input := "389125467"
+
+puzzle_input := "157623984"
