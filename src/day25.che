@@ -1,0 +1,39 @@
+use import std.string
+io :: import std.io
+fmt :: import std.fmt
+
+Main :: () {
+    card_key, door_key := input
+
+    mut card_loop_size := 0
+    mut door_loop_size := 0
+
+    mut value := 1
+    for {1..} {
+        value = (value * 7) % 20201227
+        key := value
+        if key == card_key {
+            card_loop_size = it
+        }
+        if key == door_key {
+            door_loop_size = it
+        }
+        if card_loop_size > 0 and door_loop_size > 0 then break
+    }
+
+    encryption_key := transform_subject(door_key, card_loop_size)
+    io.formatln("{}", [encryption_key])
+}
+
+transform_subject :: (subject: int, loop_size: int) -> int {
+    mut value := 1
+    for 0..loop_size {
+        value = (value * subject) % 20201227
+    }
+    return value
+}
+
+input := puzzle_input
+
+test_input   := 5764801, 17807724
+puzzle_input := 16915772, 18447943
